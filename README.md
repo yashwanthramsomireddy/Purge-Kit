@@ -4,6 +4,7 @@
 
 **Free, open-source Windows temp & cache cleaner**
 
+![Version](https://img.shields.io/badge/Version-3.8.1-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-yellow.svg)
@@ -25,13 +26,18 @@ PurgeKit is a free, open-source Windows system cleaner with a modern dark GUI. I
 
 ## ✨ Features
 
-- ✅ **160+ cleaning tasks** across 11 phases
+- ✅ **140+ cleaning tasks** across 11 phases
 - ✅ **3rd Party Apps tab** — Games, Communication, Adobe, Media, Dev Tools caches
 - ✅ **Software Updater** — winget-based, downloads official installer, open to install
 - ✅ **Per-category Select All / Deselect All** — in Tasks and 3rd Party tabs
 - ✅ **Cancel button** — stop purge cleanly after current task at any time
+- ✅ **Settings lock during purge** — theme, language, mode and other switches can't be changed mid-run
+- ✅ **Start Menu + Recycle Bin shortcut** — right-click the Recycle Bin → *Run PurgeKit Cleaner* runs the default selections silently
+- ✅ **Tray icon during silent runs** — shows live progress in its tooltip, has *Open log* and *Stop after current task*, and disappears when the run ends
+- ✅ **Choose the install folder** — the installer always shows the destination page and upgrades an existing install in place
 - ✅ **Task timeout** — no task can freeze the app; 120s max per task
-- ✅ **Per-task timing in log** — see exactly how long each task took
+- ✅ **Per-task start/finish time in log** — see when each task started, finished and how long it took
+- ✅ **Verified installer downloads** — Software Updater rejects truncated files and web pages saved as .exe
 - ✅ **29 Languages** — live switch in Settings
 - ✅ **4 Themes** — Green / Blue / Purple / White (light mode)
 - ✅ **Dry Run mode** — preview what will be deleted without deleting
@@ -48,7 +54,7 @@ PurgeKit is a free, open-source Windows system cleaner with a modern dark GUI. I
 
 ## 📋 What It Cleans
 
-> **11 cleaning phases, 160+ tasks total**
+> **11 cleaning phases, 142 tasks total** (58 ticked by default: System, User, Browser)
 
 ### Phase 1 — System (S1-S11) ✅ On by default
 Windows Temp, Prefetch, Windows Update Cache, Delivery Optimization, WER, CBS Logs, Crash Dumps, Font Cache, DataStore Logs, Installer Patch Cache, DNS Cache
@@ -125,7 +131,7 @@ English, Tamil, Hindi, Telugu, Kannada, Malayalam, Marathi, Bengali, Gujarati, P
 | File | Description |
 |---|---|
 | `PurgeKit.exe` | Portable — just double-click and run |
-| `Setup_PurgeKit_v3.7.exe` | Windows installer — Start Menu + Desktop shortcut + uninstall |
+| `Setup_PurgeKit_v3.8.1.exe` | Windows installer — Start Menu + Desktop shortcut + uninstall |
 
 👉 **[Get latest release](https://github.com/yashwanthramsomireddy/PurgeKit/releases)**
 
@@ -165,14 +171,14 @@ build.bat
 
 ```
 PurgeKit/
-├── PurgeKit.py              ← Main app — all UI panels (3100+ lines)
+├── PurgeKit.py              ← Main app — all UI panels (3200+ lines)
 ├── generate_icon.py         ← Icon generator
 ├── build.bat                ← PyInstaller build script
 ├── installer.iss            ← Inno Setup installer config
 ├── requirements.txt
 │
 ├── core/
-│   ├── cleaner.py           ← 160+ tasks, 11 phases, force delete engine
+│   ├── cleaner.py           ← 142 tasks, 11 phases, force delete engine
 │   ├── config.py            ← Config, history, whitelist, PIN (SHA-256)
 │   ├── lang_manager.py      ← 29-language loader
 │   ├── log_manager.py       ← Log writer → Downloads\PurgeKit\Logs\
@@ -204,7 +210,10 @@ PurgeKit/
 - [x] v3.5.3 — 104+ tasks, 3rd Party + Adobe phases
 - [x] v3.6 — 3rd Party Apps tab, per-category Select All, location-aware donate
 - [x] v3.7 — Cancel button, task timeout, UWP caches, scroll FPS boost
-- [ ] v4.0 — System tray, portable mode, multi-language installer
+- [x] v3.7.1 — Bug fixes: subfolder error, A6 path, log version, Store popup
+- [x] v3.8 — Real settings lock, UI always resets after purge, log file fixed, verified downloads, defaults on every launch, Start Menu + Recycle Bin shortcut
+- [x] v3.8.1 — Tray icon for silent runs, Junk Scan tab locked during purges, installer folder choice + in-place upgrade
+- [ ] v4.0 — Full background/tray mode, portable mode, multi-language installer
 - [ ] v4.1 — Secure delete (DoD 3-pass), disk health check
 - [ ] v4.2 — PDF report export, run history analytics
 - [ ] Future — Pro version (Supabase + Razorpay + Brevo) — TBD

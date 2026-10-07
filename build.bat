@@ -1,13 +1,13 @@
 @echo off
 :: ============================================================
-::  PurgeKit v3.7 — Build Script
+::  PurgeKit v3.8.1 — Build Script
 ::  Run from the PurgeKit folder in a normal CMD window
 ::  Do NOT run as Administrator
 :: ============================================================
 
 echo.
 echo  ============================================================
-echo    PurgeKit v3.7 — Build
+echo    PurgeKit v3.8.1 — Build
 echo    TeamExyKings
 echo  ============================================================
 echo.
@@ -30,6 +30,7 @@ pyinstaller ^
     --uac-admin ^
     --icon "assets\icon.ico" ^
     --add-data "lang;lang" ^
+    --hidden-import pystray._win32 ^
     PurgeKit.py
 
 echo.

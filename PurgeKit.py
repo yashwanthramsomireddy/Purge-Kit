@@ -63,7 +63,7 @@ from core.software_updater import (is_winget_available, get_upgradeable_apps,
                                     open_in_folder)
 from ui.themes         import get_theme
 
-APP_VERSION  = "3.7"
+APP_VERSION  = "3.8.1"
 GITHUB_URL   = "https://github.com/yashwanthramsomireddy/PurgeKit"
 AUTHOR_NAME  = "Yashwanth Ram Somireddy"
 AUTHOR_LOC   = "Chennai, India"
@@ -399,6 +399,8 @@ class PurgeKitApp(ctk.CTk):
 
         self.compact_mode  = tk.BooleanVar(value=self.cfg.get("compact_mode",True))
         self.task_vars     = {}
+        self._session_tasks = {}
+        self.cfg.pop("last_tasks", None)   # old versions saved this to disk -> stale selections
         self.drive_vars    = {}
         self.activity_var  = tk.StringVar(value=self.cfg.get("activity_choice","skip"))
         self.dry_run_var   = tk.BooleanVar(value=self.cfg.get("dry_run",False))
@@ -563,6 +565,8 @@ class PurgeKitApp(ctk.CTk):
                       progress_color=th["accent_dark"]).pack(side="left")
 
     def _on_dryrun_toggle(self):
+        if self._locked_guard(lambda: self.dry_run_var.set(not self.dry_run_var.get())):
+            return
         on = self.dry_run_var.get()
         try:
             self.dryrun_lbl.configure(text="🔍 DRY RUN ON" if on else "")
@@ -584,6 +588,11 @@ class PurgeKitApp(ctk.CTk):
 
     # ── Layout ───────────────────────────────────────────────
     def _build_content(self):
+        # Remember checkbox state IN MEMORY so a theme/language/mode rebuild keeps
+        # the user's selection. Never written to disk (a fresh launch = defaults).
+        if getattr(self, 'task_vars', None):
+            self._session_tasks = {tid: v.get() for tid, v in self.task_vars.items()}
+        self._spacious_panel_cache = {}  # clear on theme/lang rebuild
         for w in self.main_frame.winfo_children():
             w.destroy()
         if self.compact_mode.get():
@@ -650,8 +659,10 @@ class PurgeKitApp(ctk.CTk):
         self._show_spacious_panel(t(self.T, key))
 
     def _show_spacious_panel(self, nav_label):
-        for w in self.content_area.winfo_children():
-            w.destroy()
+        # Cache panels so tab switching never rebuilds _panel_tasks
+        # This preserves checkbox state when user navigates away and back
+        if not hasattr(self, "_spacious_panel_cache"):
+            self._spacious_panel_cache = {}
         mapping = {
             t(self.T, "tab_tasks"):      self._panel_tasks,
             t(self.T, "tab_scan"):       self._panel_scan,
@@ -661,9 +672,26 @@ class PurgeKitApp(ctk.CTk):
             t(self.T, "tab_settings"):   self._panel_settings,
             t(self.T, "tab_about"):      self._panel_about,
         }
+        # Hide all cached panels
+        for frame in self._spacious_panel_cache.values():
+            try: frame.pack_forget()
+            except Exception: pass
+        # Show or build the requested panel
+        if nav_label in self._spacious_panel_cache:
+            try:
+                frame = self._spacious_panel_cache[nav_label]
+                frame.pack(fill="both", expand=True)
+                return
+            except Exception:
+                pass
         builder = mapping.get(nav_label)
         if builder:
-            builder(self.content_area)
+            panel_frame = ctk.CTkFrame(self.content_area,
+                                       fg_color=self.th["bg_darkest"],
+                                       corner_radius=0)
+            panel_frame.pack(fill="both", expand=True)
+            builder(panel_frame)
+            self._spacious_panel_cache[nav_label] = panel_frame
 
     # ── COMPACT: CTkTabview with proper spacing ───────────────
     def _build_compact(self):
@@ -813,7 +841,8 @@ class PurgeKitApp(ctk.CTk):
         scroll.pack(fill="both", expand=True, padx=2)
         self.update_idletasks()  # suppress flicker
 
-        last_tasks = self.cfg.get("last_tasks", {})
+        # In-memory only. None -> task's built-in default (System/User/Browser on).
+        last_tasks = getattr(self, "_session_tasks", {})
 
         # Suppress redraws during build
         self.update_idletasks()
@@ -867,12 +896,8 @@ class PurgeKitApp(ctk.CTk):
 
             for task in tasks:
                 tid, ph, label, path, expand, default, warning = task
-                # Optional and Developer phases always start unchecked
-                # Other phases restore last selection
-                if ph in ("Optional", "Developer"):
-                    saved = False
-                else:
-                    saved = last_tasks.get(tid)
+                # In-session memory (survives theme/language rebuilds); else default
+                saved = last_tasks.get(tid)
                 is_wl   = any(path in w or (expand and ep(path) in w) for w in self.whitelist)
                 checked = (saved if saved is not None else default) and not is_wl
                 var = tk.BooleanVar(value=checked)
@@ -1130,6 +1155,8 @@ class PurgeKitApp(ctk.CTk):
         self.scan_clean_bar.set(0)
 
     def _run_scan(self):
+        if self._busy_guard():
+            return
         th = self.th
         # Clear old results completely
         for w in self.scan_scroll.winfo_children():
@@ -1216,6 +1243,8 @@ class PurgeKitApp(ctk.CTk):
         threading.Thread(target=do_scan, daemon=True).start()
 
     def _clean_scan_selected(self):
+        if self._busy_guard():
+            return
         selected_paths = [p for p, v in self._scan_check_vars.items() if v.get()]
         if not selected_paths:
             messagebox.showwarning("Nothing Selected", "Select at least one item to clean.")
@@ -1226,6 +1255,10 @@ class PurgeKitApp(ctk.CTk):
         )
         if not confirm:
             return
+        # From here on this counts as a purge: same running flag + settings lock
+        self.running = True
+        self._cancel_flag = False
+        self._set_ui_locked(True)
         reboot = [False]
         total_count = len(selected_paths)
 
@@ -1240,22 +1273,34 @@ class PurgeKitApp(ctk.CTk):
 
         def do_clean():
             total_freed = 0
-            self.after(0, lambda: self.scan_clean_btn.configure(
-                state="disabled", text="⏳  Cleaning..."))
-            for i, path in enumerate(selected_paths):
-                pct = i / max(total_count, 1)
-                set_scan_clean_progress(pct, f"[{i+1}/{total_count}] Cleaning: {os.path.basename(path)}...")
-                self._log(f"\n── Scan Clean: {path}", "accent")
-                if os.path.exists(path):
-                    freed = folder_size(path)
-                    from core.cleaner import force_delete
-                    force_delete(path, self._log, reboot, self.dry_run_var.get())
-                    recreate(path)
-                    total_freed += freed
-            set_scan_clean_progress(1.0, f"✅ Done — freed {fmt_size(total_freed)}")
-            self._log(f"\n✅ Scan clean complete. Freed: {fmt_size(total_freed)}", "success")
-            self.after(0, lambda: self.scan_clean_btn.configure(
-                state="normal", text="🧹  Clean Selected"))
+            try:
+                from core.cleaner import force_delete
+                self.after(0, lambda: self.scan_clean_btn.configure(
+                    state="disabled", text="⏳  Cleaning..."))
+                for i, path in enumerate(selected_paths):
+                    pct = i / max(total_count, 1)
+                    set_scan_clean_progress(pct, f"[{i+1}/{total_count}] Cleaning: {os.path.basename(path)}...")
+                    t0 = self._log_task_start("Junk Scan", path)
+                    freed = 0
+                    if os.path.exists(path):
+                        freed = folder_size(path)
+                        force_delete(path, self._log, reboot, self.dry_run_var.get())
+                        recreate(path)
+                        total_freed += freed
+                    self._log_task_end("Junk Scan", t0, freed)
+                set_scan_clean_progress(1.0, f"✅ Done — freed {fmt_size(total_freed)}")
+                self._log(f"\n✅ Junk scan clean complete. Freed: {fmt_size(total_freed)}", "success")
+            except Exception as e:
+                self._log(f"  ❌ Junk scan clean stopped by an unexpected error: {e}", "error")
+            finally:
+                def _done():
+                    try:
+                        self.scan_clean_btn.configure(state="normal", text="🧹  Clean Selected")
+                    except Exception:
+                        pass
+                    self._set_ui_locked(False)
+                    self.running = False
+                self.after(0, _done)
         threading.Thread(target=do_clean, daemon=True).start()
 
     # ── History Panel ────────────────────────────────────────
@@ -1493,7 +1538,7 @@ class PurgeKitApp(ctk.CTk):
         ]
 
         from core.cleaner import TASKS, ep, folder_size
-        last_tasks = self.cfg.get("last_tasks", {})
+        last_tasks = {}
 
         # Suppress redraws during build
         self.update_idletasks()
@@ -1645,6 +1690,14 @@ class PurgeKitApp(ctk.CTk):
             return
 
         dry = self.dry_run_var.get()
+        if self.running:
+            from tkinter import messagebox
+            messagebox.showwarning("Purge running",
+                                   "Another purge is already running. Please wait for it to finish.")
+            return
+        self.running = True
+        self._cancel_flag = False
+        self._set_ui_locked(True)
         self.tp_start_btn.configure(state="disabled", text="⏳  Running...")
         reboot = [False]
         total_freed = [0]
@@ -1656,7 +1709,7 @@ class PurgeKitApp(ctk.CTk):
             except Exception:
                 pass
 
-        def _run():
+        def _run_inner():
             for i, task in enumerate(selected):
                 pct = i / max(len(selected), 1)
                 try:
@@ -1664,12 +1717,10 @@ class PurgeKitApp(ctk.CTk):
                 except Exception:
                     pass
                 _progress(f"[{i+1}/{len(selected)}] {task[2]}...")
-                t_start = __import__('datetime').datetime.now()
-                self._log(f"\n── {task[0]}: {task[2]}  [{t_start.strftime('%H:%M:%S')}]", "accent")
+                t0 = self._log_task_start(task[0], task[2])
                 freed = run_task(task[0], self._log, reboot, dry)
                 total_freed[0] += freed
-                elapsed_s = (__import__('datetime').datetime.now() - t_start).total_seconds()
-                self._log(f"  ⏱ {task[2]}: {elapsed_s:.1f}s — freed {fmt_size(freed)}", "dim")
+                self._log_task_end(task[0], t0, freed)
                 done_count[0]  += 1
 
             try:
@@ -1684,6 +1735,22 @@ class PurgeKitApp(ctk.CTk):
             except Exception:
                 pass
             self._log(f"\n✅ 3rd Party purge done. Freed: {fmt_size(total_freed[0])}", "success")
+
+        def _run():
+            try:
+                _run_inner()
+            except Exception as e:
+                self._log(f"  ❌ 3rd Party purge stopped by an unexpected error: {e}", "error")
+            finally:
+                def _done():
+                    try:
+                        self.tp_start_btn.configure(
+                            state="normal", text="🧹  Purge Selected 3rd Party Caches")
+                    except Exception:
+                        pass
+                    self._set_ui_locked(False)
+                    self.running = False
+                self.after(0, _done)
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -1867,8 +1934,9 @@ class PurgeKitApp(ctk.CTk):
                 data = _fetch()
                 self.after(0, lambda: _render(data))
             except Exception as ex:
+                err = str(ex)          # 'ex' is deleted when this block ends
                 self.after(0, lambda: ctk.CTkLabel(
-                    parent, text=f"Error loading system info:\n{ex}",
+                    parent, text=f"Error loading system info:\n{err}",
                     font=ctk.CTkFont("Segoe UI",10),
                     text_color=th["error"]).pack(pady=20))
 
@@ -2301,9 +2369,10 @@ class PurgeKitApp(ctk.CTk):
                      font=ctk.CTkFont("Segoe UI",12),
                      text_color=th["text_white"], width=140, anchor="w").pack(side="left")
         cur_lang_name = LANGUAGES.get(self.cfg.get("language","en"),"English")
+        self._lang_var_s = tk.StringVar(value=cur_lang_name)
         ctk.CTkOptionMenu(r,
                           values=list(LANGUAGES.values()),
-                          variable=tk.StringVar(value=cur_lang_name),
+                          variable=self._lang_var_s,
                           fg_color=th["bg_card"],
                           button_color=th["accent_dark"],
                           button_hover_color=th["accent_hover"],
@@ -2675,6 +2744,8 @@ class PurgeKitApp(ctk.CTk):
         self.after(100, self._refresh_task_sizes)
 
     def _toggle_compact(self):
+        if self._locked_guard(lambda: self.compact_mode.set(not self.compact_mode.get())):
+            return
         self.cfg["compact_mode"] = self.compact_mode.get()
         save_config(self.cfg)
         self._set_window_size()
@@ -2695,6 +2766,8 @@ class PurgeKitApp(ctk.CTk):
             pass
 
     def _toggle_autostart(self):
+        if self._locked_guard(lambda: self.autostart_var.set(not self.autostart_var.get())):
+            return
         ok = set_autostart(self.autostart_var.get())
         if not ok:
             messagebox.showerror("Error", "Could not update startup registry.")
@@ -2704,6 +2777,8 @@ class PurgeKitApp(ctk.CTk):
             save_config(self.cfg)
 
     def _toggle_pin(self):
+        if self._locked_guard(lambda: self._pin_sw_var.set(not self._pin_sw_var.get())):
+            return
         if self._pin_sw_var.get():
             self._set_pin_dialog()
         else:
@@ -2761,6 +2836,8 @@ class PurgeKitApp(ctk.CTk):
         messagebox.showinfo("PIN", t(self.T,"pin_disabled"))
 
     def _toggle_scheduler(self):
+        if self._locked_guard(lambda: self._sched_var.set(not self._sched_var.get())):
+            return
         if self._sched_var.get():
             freq = "weekly" if "weekly" in self._freq_var.get().lower() else "monthly"
             create_schedule(frequency=freq)
@@ -2782,17 +2859,24 @@ class PurgeKitApp(ctk.CTk):
         self.wl_box.delete("1.0","end")
 
     def _on_lang_change(self, selection):
+        if self._locked_guard(lambda: self._lang_var_s.set(
+                LANGUAGES.get(self.cfg.get("language", "en"), "English"))):
+            return
         code = next((c for c,n in LANGUAGES.items() if n==selection), "en")
         self.cfg["language"] = code
         save_config(self.cfg)
         self._reload_theme_lang()
 
     def _on_theme_change(self, selection):
+        if self._locked_guard(lambda: self._theme_var_s.set(self.cfg.get("theme", "Green"))):
+            return
         self.cfg["theme"] = selection
         save_config(self.cfg)
         self._reload_theme_lang()
 
     def _save_settings(self):
+        if self._locked_guard():
+            return
         wl_text = self.wl_box.get("1.0","end").strip()
         self.whitelist = [p.strip() for p in wl_text.splitlines() if p.strip()]
         save_whitelist(self.whitelist)
@@ -2944,23 +3028,64 @@ class PurgeKitApp(ctk.CTk):
 
     # ── Purge Engine ─────────────────────────────────────────
     def _set_ui_locked(self, locked):
-        """Lock/unlock UI controls during purge to prevent interference."""
+        """Disable/enable every settings-type control while a purge runs."""
         state = "disabled" if locked else "normal"
+        lockable = (ctk.CTkSwitch, ctk.CTkSegmentedButton,
+                    ctk.CTkOptionMenu, ctk.CTkRadioButton)
+
+        def walk(widget):
+            try:
+                kids = widget.winfo_children()
+            except Exception:
+                return
+            for child in kids:
+                if isinstance(child, lockable):
+                    try:
+                        child.configure(state=state)
+                    except Exception:
+                        pass
+                walk(child)
+        walk(self)
+
+    def _locked_guard(self, revert=None):
+        """True (after reverting the control) if a purge is running."""
+        if not getattr(self, "running", False):
+            return False
+        if revert:
+            try:
+                revert()
+            except Exception:
+                pass
         try:
-            # Lock compact toggle, dry run toggle, theme switch
-            for widget in self.winfo_children():
-                if hasattr(widget, '_name') and 'switch' in str(widget._name).lower():
-                    widget.configure(state=state)
+            self._log("  🔒 Settings are locked while a purge is running.", "warn")
         except Exception:
             pass
-        # Lock the topbar switches
+        return True
+
+    def _busy_guard(self):
+        """True (after telling the user) if any purge/clean is already running."""
+        if not getattr(self, "running", False):
+            return False
         try:
-            if locked:
-                self.compact_mode_switch_locked = True
-            else:
-                self.compact_mode_switch_locked = False
+            messagebox.showwarning(
+                "Purge running",
+                "Another purge or clean is already running.\n"
+                "Please wait for it to finish.")
         except Exception:
             pass
+        return True
+
+    def _log_task_start(self, tid, label):
+        t0 = datetime.datetime.now()
+        self._log(f"\n── {tid}: {label}   ▶ started {t0:%H:%M:%S}", "accent")
+        return t0
+
+    def _log_task_end(self, tid, t0, freed=None):
+        t1  = datetime.datetime.now()
+        msg = f"  ⏱ {tid} finished {t1:%H:%M:%S} — took {(t1 - t0).total_seconds():.1f}s"
+        if freed is not None:
+            msg += f" — freed {fmt_size(freed)}"
+        self._log(msg, "dim")
 
     def _cancel_purge(self):
         """Signal the running purge to stop after current task."""
@@ -2972,7 +3097,7 @@ class PurgeKitApp(ctk.CTk):
         self._log("  ⏹ Cancel requested — stopping after current task...", "warn")
 
     def _start_purge(self):
-        if self.running:
+        if self._busy_guard():
             return
         selected   = [tid for tid,v in self.task_vars.items() if v.get()]
         sel_drives = [d   for d,  v in self.drive_vars.items() if v.get()]
@@ -2995,6 +3120,38 @@ class PurgeKitApp(ctk.CTk):
                          args=(selected, sel_drives, dry), daemon=True).start()
 
     def _purge_thread(self, selected, sel_drives, dry_run):
+        """Wrapper: whatever happens, the UI is ALWAYS reset afterwards."""
+        try:
+            self._purge_thread_body(selected, sel_drives, dry_run)
+        except Exception as e:
+            try:
+                self._log(f"  ❌ Purge stopped by an unexpected error: {e}", "error")
+                write_log(self.log_lines, "", version=APP_VERSION)
+            except Exception:
+                pass
+        finally:
+            self.after(0, self._finish_purge_ui)
+
+    def _finish_purge_ui(self):
+        """Runs when a purge ends for any reason: finished, cancelled or crashed."""
+        try:
+            dry = self.dry_run_var.get()
+            self.start_btn.configure(
+                text=t(self.T, "dry_run") if dry else t(self.T, "start_purge"),
+                state="normal",
+                fg_color="#3a2000" if dry else self.th["accent_dark"],
+                text_color=self.th["warn"] if dry else self.th["accent"])
+        except Exception:
+            pass
+        try:
+            self.cancel_btn.configure(state="disabled", text="⏹ Cancel")
+        except Exception:
+            pass
+        self._set_ui_locked(False)
+        self._cancel_flag = False
+        self.running = False
+
+    def _purge_thread_body(self, selected, sel_drives, dry_run):
         T   = self.T
         th  = self.th
         act = self.activity_var.get()
@@ -3008,9 +3165,11 @@ class PurgeKitApp(ctk.CTk):
         self._log(f"  {t(T,'purge_started')}" + (" [DRY RUN]" if dry_run else ""), "accent")
         self._log("═"*50, "accent")
 
+        cancel_logged = False
         for task in TASKS:
             if self._cancel_flag:
                 self._log("  ⏹ Purge cancelled by user.", "warn")
+                cancel_logged = True
                 break
             tid = task[0]
             if tid not in selected:
@@ -3023,14 +3182,20 @@ class PurgeKitApp(ctk.CTk):
                 continue
             done += 1
             self._set_progress(done/max(total,1), f"[{done}/{total}] {task[2]}...")
-            self._log(f"\n── {tid}: {task[2]}", "accent")
+            t0 = self._log_task_start(tid, task[2])
             freed = run_task(tid, self._log, self.reboot_needed, dry_run)
             total_freed += freed
+            self._log_task_end(tid, t0, freed)
 
         for drv in sel_drives:
+            if self._cancel_flag:
+                if not cancel_logged:
+                    self._log("  ⏹ Purge cancelled by user.", "warn")
+                    cancel_logged = True
+                break
             done += 1
             self._set_progress(done/max(total,1), f"[{done}/{total}] Disk Cleanup {drv}...")
-            self._log(f"\n── Disk Cleanup: {drv}", "accent")
+            t0 = self._log_task_start("Disk Cleanup", drv)
             if not dry_run:
                 for cat in DISK_CLEANUP_CATS:
                     run(f'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VolumeCaches\\{cat}" '
@@ -3038,9 +3203,14 @@ class PurgeKitApp(ctk.CTk):
                 run(f"cleanmgr /sagerun:99 /d {drv[0]}", timeout=300)
             else:
                 self._log(f"  [DRY RUN] Would run Disk Cleanup on {drv}", "warn")
-            self._log(f"  ✅ Disk Cleanup done: {drv}", "success")
+            _el = (datetime.datetime.now() - t0).total_seconds()
+            if not dry_run and _el >= 295:
+                self._log(f"  ⚠ Disk Cleanup hit its 5-minute limit on {drv} and was stopped early", "warn")
+            else:
+                self._log(f"  ✅ Disk Cleanup done: {drv}", "success")
+            self._log_task_end("Disk Cleanup", t0)
 
-        if act != "skip":
+        if act != "skip" and not self._cancel_flag:
             done += 1
             self._set_progress(done/max(total,1), "Windows Activity History...")
             self._log("\n── Activity History", "accent")
@@ -3090,12 +3260,10 @@ class PurgeKitApp(ctk.CTk):
             })
             save_history(self.history)
 
-        self.cfg["last_tasks"]     = {tid: v.get() for tid,v in self.task_vars.items()}
+        self._session_tasks        = {tid: v.get() for tid,v in self.task_vars.items()}
         self.cfg["last_drives"]    = [d for d,v in self.drive_vars.items() if v.get()]
         self.cfg["activity_choice"]= act
         save_config(self.cfg)
-
-        log_path = write_log(self.log_lines, summary)
 
         if not dry_run:
             try:
@@ -3108,63 +3276,210 @@ class PurgeKitApp(ctk.CTk):
             except Exception:
                 pass
 
-        self._set_progress(1.0, "✅ All done!")
+        self._set_progress(1.0, "⏹ Stopped" if self._cancel_flag else "✅ All done!")
         self._log("", "dim")
         self._log("═"*50, "accent")
         complete_key = "dry_run_complete" if dry_run else "purge_complete"
-        self._log(f"  {t(T,complete_key)}", "success")
-        # Auto-save log after purge
-        write_log(self.log_lines, version=APP_VERSION)
+        if self._cancel_flag:
+            self._log("  ⏹ PURGE STOPPED — cancelled by user (remaining tasks were not run).", "warn")
+        else:
+            self._log(f"  {t(T,complete_key)}", "success")
         self._log(f"  {t(T,'space_freed')}: {freed_str}", "success")
         self._log(f"  {t(T,'time_taken')}: {elapsed_str}", "dim")
-        if log_path:
-            self._log(f"  Log: {log_path}", "dim")
         if self.reboot_needed[0]:
             self._log(f"  ⚠ {t(T,'reboot_required')}", "warn")
             self.after(0, lambda: messagebox.showwarning(
                 t(T,"reboot_required"), t(T,"reboot_msg")))
         self._log("═"*50, "accent")
 
-        def _re():
-            dry = self.dry_run_var.get()
-            self.start_btn.configure(
-                text=t(T,"dry_run") if dry else t(T,"start_purge"),
-                state="normal",
-                fg_color="#3a2000" if dry else th["accent_dark"],
-                text_color=th["warn"] if dry else th["accent"])
-            try:
-                self.cancel_btn.configure(state="disabled", text="⏹ Cancel")
-            except Exception:
-                pass
-            self._set_ui_locked(False)
-            self._cancel_flag = False
-            self.running = False
-        self.after(0, _re)
+        # Save the log LAST so the file contains every line above.
+        log_path = write_log(self.log_lines, summary, version=APP_VERSION)
+        if log_path:
+            self._log(f"  💾 Log saved: {log_path}", "dim")
+        else:
+            self._log("  ⚠ Could not save the log file (Downloads\\PurgeKit\\Logs)", "warn")
 
 
 # ── CLI silent mode ───────────────────────────────────────────
+class _SilentTray:
+    """
+    Tray icon that exists ONLY while a --silent run is active.
+    Shows "PurgeKit — cleaning 12/58" in its tooltip, has "Open log" and
+    "Stop after current task" in its menu, and is removed when the run ends.
+    Entirely best-effort: if pystray/Pillow or the tray is unavailable the run
+    simply carries on with toast notifications only.
+    """
+
+    def __init__(self, total, log_path, stop_event):
+        self.total, self.done, self.label = total, 0, "starting…"
+        self.log_path   = log_path
+        self.stop_event = stop_event
+        self._icon      = None
+        self._thread    = None
+        try:
+            import pystray
+            img  = generate_icon((0, 230, 118)).convert("RGBA").resize((64, 64))
+            menu = pystray.Menu(
+                pystray.MenuItem(lambda item: self._status(), None, enabled=False),
+                pystray.MenuItem("Open log", self._open_log),
+                pystray.MenuItem("Stop after current task", self._request_stop),
+            )
+            self._icon   = pystray.Icon("PurgeKit", img, self._tooltip(), menu)
+            self._thread = threading.Thread(target=self._run_icon, daemon=True)
+            self._thread.start()
+        except Exception:
+            self._icon = None
+
+    def _run_icon(self):
+        try:
+            self._icon.run()          # blocks until close() calls icon.stop()
+        except Exception:
+            pass                      # no tray available -> carry on without it
+
+    def _status(self):
+        return f"Cleaning {self.done}/{self.total}"
+
+    def _tooltip(self):
+        return f"PurgeKit — cleaning {self.done}/{self.total}\n{self.label}"[:120]
+
+    def update(self, done, label):
+        self.done, self.label = done, label
+        if self._icon is not None:
+            try:
+                self._icon.title = self._tooltip()
+                self._icon.update_menu()
+            except Exception:
+                pass
+
+    def _open_log(self, icon=None, item=None):
+        try:
+            os.startfile(self.log_path)
+        except Exception:
+            pass
+
+    def _request_stop(self, icon=None, item=None):
+        self.stop_event.set()
+        self.update(self.done, "stopping after current task…")
+
+    def close(self):
+        """Remove the icon from the tray (no ghost icon left behind)."""
+        icon, self._icon = self._icon, None
+        if icon is not None:
+            try:
+                icon.stop()
+            except Exception:
+                pass
+        if self._thread is not None:
+            self._thread.join(timeout=3)
+
+
 def run_silent():
+    """
+    --silent / Recycle Bin "Run PurgeKit Cleaner" / scheduled runs.
+    Runs exactly the tasks that a fresh launch shows ticked in the Tasks tab
+    (System + User + Browser defaults), honours the whitelist, shows a tray
+    icon with progress while it works, and a Windows toast at start and finish.
+    """
     from core.cleaner import TASKS, get_drives, DISK_CLEANUP_CATS, run_task, run, fmt_size
-    from core.log_manager import write_log
-    cfg    = load_config()
-    reboot = [False]
-    log    = []
-    freed  = 0
-    log_fn = lambda msg, tag: log.append(msg)
-    print(f"PurgeKit v{APP_VERSION} — Silent Mode")
+    from core.log_manager import write_log, get_log_path
+
+    def toast(title, msg, open_path=None):
+        try:
+            from winotify import Notification
+            n = Notification(app_id="PurgeKit", title=title, msg=msg, duration="short")
+            if open_path:
+                try:
+                    n.add_actions(label="Open log", launch=open_path)
+                except Exception:
+                    pass
+            n.show()
+        except Exception:
+            pass
+
+    reboot    = [False]
+    log       = []
+    freed     = 0
+    whitelist = load_whitelist()
+    started   = datetime.datetime.now()
+    stop      = threading.Event()
+
+    def log_fn(msg, tag=""):
+        log.append(f"[{datetime.datetime.now():%H:%M:%S}] {msg}")
+
+    todo = []
     for task in TASKS:
-        if cfg.get("last_tasks",{}).get(task[0], task[5]):
+        if not task[5]:                       # default-ON tasks only
+            continue
+        rp = ep(task[3]) if task[4] else task[3]
+        if any(wl in rp or rp in wl for wl in whitelist):
+            log_fn(f"[SKIP] whitelisted: {rp}")
+            continue
+        todo.append(task)
+    drives   = list(get_drives())
+    total    = len(todo) + len(drives)
+    log_path = get_log_path()
+
+    print(f"PurgeKit v{APP_VERSION} — Silent Mode")
+    log_fn(f"PurgeKit v{APP_VERSION} silent run — default selections "
+           f"({len(todo)} tasks + {len(drives)} drive cleanup)")
+    toast("PurgeKit", f"Cleaning started — {len(todo)} tasks. Tray icon: right-click to stop.")
+    tray    = _SilentTray(total, log_path, stop)
+    done    = 0
+    stopped = False
+
+    try:
+        for task in todo:
+            if stop.is_set():
+                stopped = True
+                break
+            done += 1
+            tray.update(done, task[2])
+            t0 = datetime.datetime.now()
+            log_fn(f"\n── {task[0]}: {task[2]}   ▶ started {t0:%H:%M:%S}")
             print(f"  Cleaning: {task[2]}")
-            freed += run_task(task[0], log_fn, reboot, False)
-    for drv, _, _, _ in get_drives():
-        for cat in DISK_CLEANUP_CATS:
-            run(f'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VolumeCaches\\{cat}" '
-                f'/v StateFlags0099 /t REG_DWORD /d 2 /f')
-        run(f"cleanmgr /sagerun:99 /d {drv[0]}", timeout=300)
-    path = write_log(log, f"Silent run — freed {fmt_size(freed)}")
-    print(f"Done. Freed {fmt_size(freed)}. Log: {path}")
-    if reboot[0]:
-        print("REBOOT REQUIRED.")
+            f = run_task(task[0], log_fn, reboot, False)
+            freed += f
+            t1 = datetime.datetime.now()
+            log_fn(f"  ⏱ {task[0]} finished {t1:%H:%M:%S} — took {(t1 - t0).total_seconds():.1f}s — freed {fmt_size(f)}")
+            write_log(log, "Run in progress…", version=APP_VERSION, path=log_path)   # live log
+
+        if not stopped:
+            for drv, _, _, _ in drives:
+                if stop.is_set():
+                    stopped = True
+                    break
+                done += 1
+                tray.update(done, f"Disk Cleanup {drv}")
+                t0 = datetime.datetime.now()
+                log_fn(f"\n── Disk Cleanup: {drv}   ▶ started {t0:%H:%M:%S}")
+                for cat in DISK_CLEANUP_CATS:
+                    run(f'reg add "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VolumeCaches\\{cat}" '
+                        f'/v StateFlags0099 /t REG_DWORD /d 2 /f')
+                run(f"cleanmgr /sagerun:99 /d {drv[0]}", timeout=300)
+                t1 = datetime.datetime.now()
+                log_fn(f"  ⏱ Disk Cleanup {drv} finished {t1:%H:%M:%S} — took {(t1 - t0).total_seconds():.1f}s")
+                write_log(log, "Run in progress…", version=APP_VERSION, path=log_path)
+
+        if stopped:
+            log_fn("⏹ Stopped from the tray menu — remaining steps were not run.")
+    except Exception as e:
+        log_fn(f"❌ Silent run stopped by an unexpected error: {e}")
+    finally:
+        took    = str(datetime.datetime.now() - started).split(".")[0]
+        summary = (f"Silent run {'STOPPED' if stopped else 'complete'} — "
+                   f"freed {fmt_size(freed)} in {took}")
+        log_fn("\n" + summary)
+        if reboot[0]:
+            log_fn("REBOOT REQUIRED to finish removing locked files.")
+        path = write_log(log, summary, version=APP_VERSION, path=log_path)
+        tray.close()                          # icon disappears when the run ends
+        print(f"Done. Freed {fmt_size(freed)}. Log: {path}")
+        toast("PurgeKit — stopped" if stopped else "PurgeKit — done",
+              f"Freed {fmt_size(freed)} in {took}" +
+              ("  (restart needed to finish)" if reboot[0] else ""),
+              open_path=path)
+        if reboot[0]:
+            print("REBOOT REQUIRED.")
 
 
 if __name__ == "__main__":

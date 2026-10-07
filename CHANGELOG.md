@@ -4,6 +4,68 @@ Format: `## [version] - date | highlights`
 
 ---
 
+## [3.8.1] - 2026-10-04
+
+### Added
+- **Tray icon during silent runs** (Recycle Bin → *Run PurgeKit Cleaner*, `--silent`, scheduler). Tooltip shows `PurgeKit — cleaning 12/58` plus the current task. Menu: live status, **Open log**, **Stop after current task**. The icon is removed when the run ends (also if it crashes). Windows may place it under the **^** overflow arrow. If the tray is unavailable the run carries on with notifications only.
+- **Live log for silent runs** — the log file is rewritten after every task, so *Open log* shows progress while it runs. The finish notification has an **Open log** button.
+- **Install folder choice** — the installer now always shows *Select Destination Location*.
+
+### Fixed
+- **Junk Scan → Clean Selected could run during a Tasks purge** (and vice-versa). Scan, Clean Selected, Start Purge and the 3rd Party tab now share one lock: a second purge is refused with a message. Junk Scan clean also locks the settings, logs per-item start/finish times, and always unlocks — even if a delete fails (before, the button could stay on "Cleaning…").
+- **Upgrading from v3.7 installed a second copy** (`Program Files` next to `Program Files (x86)`), so the taskbar shortcut kept opening v3.7. v3.8 had switched the installer to 64-bit mode, which Windows treats as a different install. The installer is back in the original mode, so it now upgrades the existing install in place. (The Recycle Bin entry is written to the 64-bit registry view explicitly.)
+- After **Cancel**, the log said "PURGE COMPLETE ✅" and printed the cancel message twice; it now says "PURGE STOPPED" once.
+- Silent-mode tray/log code paths never leave a half-written log (atomic write).
+
+### Changed
+- **Tab renamed: "Scan" → "Junk Scan"** (English and the 25 languages that use the English label; Hindi, Tamil and Telugu keep their own word for "Scan").
+- `build.bat` adds `--hidden-import pystray._win32` so the tray works in the packaged exe.
+- Version `3.8.1` in `PurgeKit.py`, `core/updater.py`, `installer.iss`, README badge.
+
+### Upgrade note (one-time, if you installed the v3.8 Setup)
+Uninstall the extra copy at `C:\Program Files\PurgeKit` from Settings → Apps **first**, then run the 3.8.1 Setup. It will update `C:\Program Files (x86)\PurgeKit` in place.
+
+---
+
+## [3.8.0] - 2026-10-04
+
+### Fixed
+- **Purge finished but the app stayed on "Running" with the Cancel button active** — an error at the end of the purge thread (a bad `write_log` call) killed the thread before the UI was reset. The UI reset now lives in a `finally` block, so it runs after a normal finish, a cancel, *or* a crash.
+- **Log file in Downloads\PurgeKit\Logs was blank (header line only)** — the log header referenced an undefined variable, so the write failed after the file was opened. Fixed; the log is now saved *last*, so it contains every line including the final summary. A failed write no longer leaves a half-written file.
+- **"Selected 1 task, everything purged"** — selections were saved to disk and restored on the next launch, so an old "all selected" state (and any rebuild of the Tasks tab) silently overrode what you ticked. Selection is now kept in memory only: **every launch starts from the built-in defaults** (System, User and Browser ticked; Developer, 3rd Party, Adobe, Games, Communication, Media, DevTools and Optional unticked — 58 of 142 tasks). Your choices still survive theme/language changes within a session. Switching tabs in Spacious mode no longer rebuilds (and resets) the Tasks tab.
+- **Settings could be changed during a purge** — the earlier "lock" did nothing. Theme, language, compact mode, dry-run, auto-start, PIN, scheduler and Save are now genuinely locked (controls disabled *and* handlers refuse) until the purge ends.
+- **3rd Party tab could run at the same time as a Tasks purge** — it now shares the same running/lock state.
+- **Software Updater saved corrupt installers** (e.g. Notepad++, VLC) — downloads were accepted even if the connection dropped early or the server returned a web page. Downloads now go to a temp file and are only kept if: the byte count matches `Content-Length`, the server did not send HTML, and the file header is a real `.exe` / `.msi` / `.msix`. The real file name is taken from the server's `Content-Disposition` header or the signed-URL query string. A rejected download tells you why and saves nothing.
+- **System Info error handler** could itself crash (`ex` used after its `except` block ended).
+- **Per-task timing** — each task now logs `▶ started HH:MM:SS` and `⏱ finished HH:MM:SS — took N.Ns — freed X` (Tasks tab, 3rd Party tab, silent mode). Disk Cleanup warns when it hits its 5-minute limit.
+
+### Added
+- **Start Menu**: `PurgeKit` and `PurgeKit (Run Cleaner Now)`.
+- **Recycle Bin right-click → "Run PurgeKit Cleaner"** (installer option, on by default). Runs the default selections silently (no window) and shows a toast when it starts and finishes. Honours your whitelist.
+- Cancel is also honoured before Disk Cleanup and Activity History steps.
+
+### Changed
+- `--silent` (Recycle Bin, scheduler) now runs the **built-in default selection** instead of "last used", and respects the whitelist.
+- Installer is 64-bit (needed so the Recycle Bin entry is written where Explorer reads it).
+- Corrected task count: **142** tasks (earlier notes said 104+/160+).
+- `APP_VERSION`, `CURRENT_VERSION`, `installer.iss` → `3.8`.
+
+---
+
+## [3.7.1] - 2026-09-24
+
+### Fixed
+- **`subfolder` variable error in U38/U40/U42** — broken UWP handler code was accidentally nested inside the U38 elif block from a previous edit, causing `cannot access local variable 'subfolder'` errors on those tasks even after successful completion. Completely removed and replaced with a clean handler.
+- **A6 Adobe Photoshop Temp removed** — was incorrectly pointing to `%TEMP%` (same path as U1), causing a duplicate reboot-pending schedule. Removed entirely.
+- **Log header version hardcoded as v3.0** — `write_log()` now accepts a `version` parameter; PurgeKit passes `APP_VERSION` dynamically. Log header now shows the correct version.
+- **Log auto-saves after purge completes** — no more need to manually click Save Log after every run.
+- **Windows Store popup on U12** — replaced `wsreset.exe` call (which opens the Store window as a side effect) with direct deletion of `Packages\Microsoft.WindowsStore_8wekyb3d8bbwe\LocalCache`. No window opens.
+- **U37 Power BI Desktop Cache removed** — was hanging silently with no log output due to locked Power BI process handles.
+- **U39 TeamViewer Logs removed** — was hanging silently after U38.
+- **Task timeout wrapper added** — every task now runs with a 120-second timeout via a threading wrapper. If any task hangs, the log shows `⏱ TIMEOUT (120s) — skipping` and purge moves to the next task automatically. App can never freeze indefinitely again.
+
+---
+
 ## [3.7.0] - 2026-09-23
 
 ### Added
@@ -25,14 +87,6 @@ Format: `## [version] - date | highlights`
 - **Windows Defender Scan History (U19) — removed entirely** — cleaning this path takes 10-20 minutes due to 100,000+ tiny locked files; MpCmdRun.exe approach did not reliably fix the hang. Removed from task list. Users can clear via Windows Security if needed.
 - **Duplicate task definitions** — U19, U35, U36, U43-U45 were appearing twice in TASKS list due to multiple insertion attempts; deduplicated to single entries.
 - **Scroll row flicker** — Tasks, Scan, 3rd Party, Updater tabs were rendering rows one-by-one causing visible flicker. Fixed with `update_idletasks()` batching and canvas state management.
-- **`subfolder` variable error in U38/U40/U42** — broken UWP handler code was accidentally nested inside the U38 elif block from a previous edit, causing `cannot access local variable 'subfolder'` errors on those tasks even after successful completion. Completely removed and replaced with a clean handler.
-- **A6 Adobe Photoshop Temp removed** — was incorrectly pointing to `%TEMP%` (same path as U1), causing a duplicate reboot-pending schedule. Removed entirely.
-- **Log header version hardcoded as v3.0** — `write_log()` now accepts a `version` parameter; PurgeKit passes `APP_VERSION` dynamically. Log header now shows the correct version.
-- **Log auto-saves after purge completes** — no more need to manually click Save Log after every run.
-- **Windows Store popup on U12** — replaced `wsreset.exe` call (which opens the Store window as a side effect) with direct deletion of `Packages\Microsoft.WindowsStore_8wekyb3d8bbwe\LocalCache`. No window opens.
-- **U37 Power BI Desktop Cache removed** — was hanging silently with no log output due to locked Power BI process handles.
-- **U39 TeamViewer Logs removed** — was hanging silently after U38.
-- **Task timeout wrapper added** — every task now runs with a 120-second timeout via a threading wrapper. If any task hangs, the log shows `⏱ TIMEOUT (120s) — skipping` and purge moves to the next task automatically. App can never freeze indefinitely again.
 
 ### Changed
 - `APP_VERSION` → `3.7`, `CURRENT_VERSION` → `3.7`, `installer.iss` → `3.7`
