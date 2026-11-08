@@ -14,7 +14,7 @@ import threading
 
 GITHUB_API      = "https://api.github.com/repos/yashwanthramsomireddy/PurgeKit/releases/latest"
 GITHUB_RELEASES = "https://github.com/yashwanthramsomireddy/PurgeKit/releases"
-CURRENT_VERSION = "3.7"
+CURRENT_VERSION = "3.8.1"
 EXE_ASSET_NAME  = "PurgeKit.exe"
 
 def check_for_update(timeout=8):

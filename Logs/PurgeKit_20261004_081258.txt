@@ -1,0 +1,306 @@
+============================================================
+  PurgeKit v3.8  |  MIT License  |  TeamExyKings
+  Built with love by Yashwanth Ram Somireddy, Chennai, India
+  GitHub  : https://github.com/yashwanthramsomireddy/PurgeKit
+  Saved   : 2026-10-04 08:12:58
+  User    : Yash
+  PC      : Yashwanth
+  OS      : Windows-11-10.0.26300-SP0
+============================================================
+
+Silent run — freed 577.4 MB in 0:04:13
+
+------------------------------------------------------------
+
+[08:08:45] PurgeKit v3.8 silent run — default selections
+[08:08:45] 
+── S1: Windows System Temp   ▶ started 08:08:45
+[08:08:45]   ⚠ T1 failed, trying T2 (takeown)...
+[08:08:45]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:08:45]   🔁 T3 — scheduled for reboot: C:\Windows\Temp
+[08:08:45]   ⏱ S1 finished 08:08:45 — took 0.3s — freed 0 B
+[08:08:45] 
+── S2: Prefetch Files   ▶ started 08:08:45
+[08:08:45]   ✅ T1 (robocopy) — freed 1.3 MB
+[08:08:45]   ⏱ S2 finished 08:08:45 — took 0.1s — freed 1.3 MB
+[08:08:45] 
+── S3: Windows Update Cache   ▶ started 08:08:45
+[08:08:50]   ✅ T1 (robocopy) — freed 525.0 MB
+[08:08:57]   ⏱ S3 finished 08:08:57 — took 11.9s — freed 525.0 MB
+[08:08:57] 
+── S4: Delivery Optimization Files   ▶ started 08:08:57
+[08:09:02]   ✅ T1 (robocopy) — freed 0 B
+[08:09:04]   ⏱ S4 finished 08:09:04 — took 7.2s — freed 0 B
+[08:09:04] 
+── S5: Windows Error Reporting   ▶ started 08:09:04
+[08:09:04]   ✅ T1 (robocopy) — freed 0 B
+[08:09:04]   ✅ T1 (robocopy) — freed 161.6 KB
+[08:09:04]   ⏱ S5 finished 08:09:04 — took 0.1s — freed 161.6 KB
+[08:09:04] 
+── S6: CBS Logs   ▶ started 08:09:04
+[08:09:04]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:04]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:04]   🔁 T3 — scheduled for reboot: C:\Windows\Logs\CBS
+[08:09:04]   ⏱ S6 finished 08:09:04 — took 0.2s — freed 0 B
+[08:09:04] 
+── S7: Crash Dumps   ▶ started 08:09:04
+[08:09:05]   ✅ T1 (robocopy) — freed 0 B
+[08:09:05]   ⏱ S7 finished 08:09:05 — took 0.1s — freed 0 B
+[08:09:05] 
+── S8: Windows Font Cache   ▶ started 08:09:05
+[08:09:07]   ✅ T1 (robocopy) — freed 32.8 MB
+[08:09:09]   ⏱ S8 finished 08:09:09 — took 4.7s — freed 32.8 MB
+[08:09:09] 
+── S9: SoftwareDistribution Logs   ▶ started 08:09:09
+[08:09:12]   ✅ T1 (robocopy) — freed 8.8 MB
+[08:09:14]   ⏱ S9 finished 08:09:14 — took 4.7s — freed 8.8 MB
+[08:09:14] 
+── S10: Windows Installer Patch Cache   ▶ started 08:09:14
+[08:09:14]   ✅ T1 (robocopy) — freed 0 B
+[08:09:14]   ⏱ S10 finished 08:09:14 — took 0.1s — freed 0 B
+[08:09:14] 
+── S11: DNS Cache (Flush)   ▶ started 08:09:14
+[08:09:14]   ✅ DNS cache flushed
+[08:09:14]   ⏱ S11 finished 08:09:14 — took 0.1s — freed 0 B
+[08:09:14] 
+── U1: User Temp Folder (%TEMP%)   ▶ started 08:09:14
+[08:09:15]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:15]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:16]   🔁 T3 — scheduled for reboot: C:\Users\Yash\AppData\Local\Temp
+[08:09:16]   ⏱ U1 finished 08:09:16 — took 2.0s — freed 0 B
+[08:09:16] 
+── U1b: LocalAppData Temp   ▶ started 08:09:16
+[08:09:16]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:16]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:18]   🔁 T3 — scheduled for reboot: C:\Users\Yash\AppData\Local\Temp
+[08:09:18]   ⏱ U1b finished 08:09:18 — took 1.6s — freed 0 B
+[08:09:18] 
+── U2: Thumbnail Cache   ▶ started 08:09:18
+[08:09:18]   ✅ Thumbnail cache cleared
+[08:09:18]   ⏱ U2 finished 08:09:18 — took 0.2s — freed 4.1 MB
+[08:09:18] 
+── U3: Recent Files & Jump Lists   ▶ started 08:09:18
+[08:09:18]   ✅ T1 (robocopy) — freed 31.7 KB
+[08:09:18]   ⏱ U3 finished 08:09:18 — took 0.1s — freed 31.7 KB
+[08:09:18] 
+── U4: IE / Legacy Edge WebCache   ▶ started 08:09:18
+[08:09:18]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:18]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:18]   🔁 T3 — scheduled for reboot: C:\Users\Yash\AppData\Local\Microsoft\Windows\WebCache
+[08:09:18]   ⏱ U4 finished 08:09:18 — took 0.5s — freed 0 B
+[08:09:18] 
+── U4b: IE / Legacy INetCache   ▶ started 08:09:18
+[08:09:19]   ✅ T1 (robocopy) — freed 5.3 KB
+[08:09:19]   ⏱ U4b finished 08:09:19 — took 0.1s — freed 5.3 KB
+[08:09:19] 
+── U5: DirectX Shader Cache   ▶ started 08:09:19
+[08:09:19]   ✅ T1 (robocopy) — freed 204.0 KB
+[08:09:19]   ⏱ U5 finished 08:09:19 — took 0.1s — freed 204.0 KB
+[08:09:19] 
+── U5b: User Crash Dumps   ▶ started 08:09:19
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ⏱ U5b finished 08:09:19 — took 0.1s — freed 0 B
+[08:09:19] 
+── U6: Microsoft Teams Cache   ▶ started 08:09:19
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ⏱ U6 finished 08:09:19 — took 0.3s — freed 0 B
+[08:09:19] 
+── U7: VS Code Cache   ▶ started 08:09:19
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ⏱ U7 finished 08:09:19 — took 0.3s — freed 0 B
+[08:09:19] 
+── U8: Microsoft Office Cache   ▶ started 08:09:19
+[08:09:19]   ✅ T1 (robocopy) — freed 0 B
+[08:09:19]   ⏱ U8 finished 08:09:19 — took 0.1s — freed 0 B
+[08:09:19] 
+── U9: Spotify Cache   ▶ started 08:09:19
+[08:09:20]   ✅ T1 (robocopy) — freed 0 B
+[08:09:20]   ⏱ U9 finished 08:09:20 — took 0.3s — freed 0 B
+[08:09:20] 
+── U10: Icon Cache   ▶ started 08:09:20
+[08:09:20]   ✅ IconCache.db deleted
+[08:09:20]   ⏱ U10 finished 08:09:20 — took 0.3s — freed 29.3 KB
+[08:09:20] 
+── U11: Clipboard History   ▶ started 08:09:20
+[08:09:20]   ✅ Clipboard cleared
+[08:09:20]   ⏱ U11 finished 08:09:20 — took 0.1s — freed 0 B
+[08:09:20] 
+── U12: Windows Store Cache   ▶ started 08:09:20
+[08:09:20]   ✅ T1 (robocopy) — freed 0 B
+[08:09:20]   ✅ Windows Store cache cleared
+[08:09:20]   ⏱ U12 finished 08:09:20 — took 0.1s — freed 0 B
+[08:09:20] 
+── B1: Chrome — Cache + Code + GPU   ▶ started 08:09:20
+[08:09:20]   ✅ T1 (robocopy) — freed 0 B
+[08:09:21]   ✅ T1 (robocopy) — freed 0 B
+[08:09:21]   ✅ T1 (robocopy) — freed 0 B
+[08:09:21]   ✅ Chrome cache cleared
+[08:09:21]   ⏱ B1 finished 08:09:21 — took 0.4s — freed 0 B
+[08:09:21] 
+── B1b: Chrome — Service Worker Cache   ▶ started 08:09:21
+[08:09:21]   ✅ T1 (robocopy) — freed 0 B
+[08:09:21]   ✅ Chrome Service Worker cache cleared
+[08:09:21]   ⏱ B1b finished 08:09:21 — took 0.4s — freed 0 B
+[08:09:21] 
+── B2: Firefox — Cache (All Profiles)   ▶ started 08:09:21
+[08:09:21]   ✅ Firefox cache cleared
+[08:09:21]   ⏱ B2 finished 08:09:21 — took 0.3s — freed 0 B
+[08:09:21] 
+── B3: Edge — Cache + Code + GPU   ▶ started 08:09:21
+[08:09:22]   ✅ T1 (robocopy) — freed 0 B
+[08:09:22]   ✅ T1 (robocopy) — freed 144 B
+[08:09:22]   ✅ T1 (robocopy) — freed 544.4 KB
+[08:09:22]   ✅ Edge cache cleared
+[08:09:22]   ⏱ B3 finished 08:09:22 — took 0.9s — freed 544.5 KB
+[08:09:22] 
+── B3b: Edge — Service Worker Cache   ▶ started 08:09:22
+[08:09:23]   ✅ T1 (robocopy) — freed 0 B
+[08:09:23]   ✅ Edge Service Worker cache cleared
+[08:09:23]   ⏱ B3b finished 08:09:23 — took 0.4s — freed 0 B
+[08:09:23] 
+── U13: Zoom Cache   ▶ started 08:09:23
+[08:09:23]   ✅ T1 (robocopy) — freed 0 B
+[08:09:23]   ✅ Zoom cache cleared
+[08:09:23]   ⏱ U13 finished 08:09:23 — took 0.4s — freed 0 B
+[08:09:23] 
+── U14: Zoom Logs   ▶ started 08:09:23
+[08:09:23]   ✅ T1 (robocopy) — freed 0 B
+[08:09:23]   ✅ Zoom logs cleared
+[08:09:23]   ⏱ U14 finished 08:09:23 — took 0.1s — freed 0 B
+[08:09:23] 
+── U15: Discord Cache   ▶ started 08:09:23
+[08:09:23]   ✅ T1 (robocopy) — freed 0 B
+[08:09:23]   ✅ Discord cache cleared
+[08:09:23]   ⏱ U15 finished 08:09:23 — took 0.3s — freed 0 B
+[08:09:23] 
+── U15b: Discord Code Cache   ▶ started 08:09:23
+[08:09:23]   ✅ T1 (robocopy) — freed 0 B
+[08:09:23]   ✅ Discord code cache cleared
+[08:09:23]   ⏱ U15b finished 08:09:23 — took 0.1s — freed 0 B
+[08:09:23] 
+── U16: WhatsApp Desktop Cache   ▶ started 08:09:23
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ WhatsApp cache cleared
+[08:09:24]   ⏱ U16 finished 08:09:24 — took 0.2s — freed 0 B
+[08:09:24] 
+── U17: OneDrive Logs   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ OneDrive logs cleared
+[08:09:24]   ⏱ U17 finished 08:09:24 — took 0.1s — freed 0 B
+[08:09:24] 
+── U18: Teams 2.0 Cache   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ Teams 2.0 cache cleared
+[08:09:24]   ⏱ U18 finished 08:09:24 — took 0.1s — freed 0 B
+[08:09:24] 
+── U20: Windows Update Logs   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 4.3 MB
+[08:09:24]   ✅ Windows Update logs cleared
+[08:09:24]   ⏱ U20 finished 08:09:24 — took 0.1s — freed 4.3 MB
+[08:09:24] 
+── U21: Downloaded Installations Cache   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ Downloaded Installations cache cleared
+[08:09:24]   ⏱ U21 finished 08:09:24 — took 0.1s — freed 0 B
+[08:09:24] 
+── U22: Squirrel Temp (App Installer Cache)   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ SquirrelTemp cache cleared
+[08:09:24]   ⏱ U22 finished 08:09:24 — took 0.1s — freed 0 B
+[08:09:24] 
+── U23: iTunes Cache   ▶ started 08:09:24
+[08:09:24]   ✅ T1 (robocopy) — freed 0 B
+[08:09:24]   ✅ iTunes cache cleared
+[08:09:24]   ⏱ U23 finished 08:09:24 — took 0.2s — freed 0 B
+[08:09:24] 
+── U24: Windows DISM Logs   ▶ started 08:09:24
+[08:09:24]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:24]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:24]   🔁 T3 — scheduled for reboot: C:\Windows\Logs\DISM
+[08:09:24]   ✅ Windows DISM Logs cleared
+[08:09:24]   ⏱ U24 finished 08:09:24 — took 0.3s — freed 0 B
+[08:09:24] 
+── U25: MeasuredBoot Logs   ▶ started 08:09:24
+[08:09:25]   ✅ T1 (robocopy) — freed 266.6 KB
+[08:09:25]   ✅ MeasuredBoot Logs cleared
+[08:09:25]   ⏱ U25 finished 08:09:25 — took 0.1s — freed 266.6 KB
+[08:09:25] 
+── U26: Windows Diagnostics Logs   ▶ started 08:09:25
+[08:09:25]   [SKIP] Not found: C:\Windows\diagnostics\system
+[08:09:25]   ✅ Windows Diagnostics Logs cleared
+[08:09:25]   ⏱ U26 finished 08:09:25 — took 0.0s — freed 0 B
+[08:09:25] 
+── U27: LocalService Temp   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ LocalService Temp cleared
+[08:09:25]   ⏱ U27 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U28: NetworkService Temp   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 1.2 KB
+[08:09:25]   ✅ NetworkService Temp cleared
+[08:09:25]   ⏱ U28 finished 08:09:25 — took 0.1s — freed 1.2 KB
+[08:09:25] 
+── U29: Jump List AutoDest   ▶ started 08:09:25
+[08:09:25]   [SKIP] Not found: C:\Users\Yash\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
+[08:09:25]   ✅ Jump List AutoDest cleared
+[08:09:25]   ⏱ U29 finished 08:09:25 — took 0.0s — freed 0 B
+[08:09:25] 
+── U30: Jump List CustomDest   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ Jump List CustomDest cleared
+[08:09:25]   ⏱ U30 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U31: Temp Low Integrity   ▶ started 08:09:25
+[08:09:25]   [SKIP] Not found: C:\Users\Yash\AppData\Local\Temp\Low
+[08:09:25]   ✅ Temp Low Integrity cleared
+[08:09:25]   ⏱ U31 finished 08:09:25 — took 0.0s — freed 0 B
+[08:09:25] 
+── U32: CrashRpt Cache   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ CrashRpt Cache cleared
+[08:09:25]   ⏱ U32 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U33: Chrome Extension Storage Cache   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ Chrome Extension Storage Cache cleared
+[08:09:25]   ⏱ U33 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U34: Edge Extension Storage Cache   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ Edge Extension Storage Cache cleared
+[08:09:25]   ⏱ U34 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U35: Teams Meeting Addin MSIs   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ Teams Meeting Addin MSIs cleared
+[08:09:25]   ⏱ U35 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U36: Teams Meeting Addin Cache   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ Teams Meeting Addin Cache cleared
+[08:09:25]   ⏱ U36 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U38: CEF Browser Cache   ▶ started 08:09:25
+[08:09:25]   ✅ T1 (robocopy) — freed 0 B
+[08:09:25]   ✅ CEF Browser Cache cleared
+[08:09:25]   ⏱ U38 finished 08:09:25 — took 0.1s — freed 0 B
+[08:09:25] 
+── U40: ConnectedDevices Platform Cache   ▶ started 08:09:25
+[08:09:25]   ⚠ T1 failed, trying T2 (takeown)...
+[08:09:25]   ⚠ T2 failed, scheduling on reboot (T3)...
+[08:09:26]   🔁 T3 — scheduled for reboot: C:\Users\Yash\AppData\Local\ConnectedDevicesPlatform
+[08:09:26]   ✅ ConnectedDevices Platform Cache cleared
+[08:09:26]   ⏱ U40 finished 08:09:26 — took 0.4s — freed 0 B
+[08:09:26] 
+── U42: VS Code Logs   ▶ started 08:09:26
+[08:09:26]   ✅ T1 (robocopy) — freed 0 B
+[08:09:26]   ✅ VS Code Logs cleared
+[08:09:26]   ⏱ U42 finished 08:09:26 — took 0.1s — freed 0 B
+[08:09:26] 
+── Disk Cleanup: C:\   ▶ started 08:09:26
+[08:12:58]   ⏱ Disk Cleanup C:\ finished 08:12:58 — took 212.6s
+[08:12:58] 
+Silent run — freed 577.4 MB in 0:04:13
+[08:12:58] REBOOT REQUIRED to finish removing locked files.

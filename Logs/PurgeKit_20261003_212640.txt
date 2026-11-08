@@ -1,0 +1,34 @@
+============================================================
+  PurgeKit v3.8  |  MIT License  |  TeamExyKings
+  Built with love by Yashwanth Ram Somireddy, Chennai, India
+  GitHub  : https://github.com/yashwanthramsomireddy/PurgeKit
+  Saved   : 2026-10-03 21:26:40
+  User    : Yash
+  PC      : Yashwanth
+  OS      : Windows-11-10.0.26300-SP0
+============================================================
+
+[21:26:25] PurgeKit v3.8 ready.
+[21:26:25] Select tasks and press START PURGE.
+[21:26:33] 
+[21:26:33] ══════════════════════════════════════════════════
+[21:26:33]   PURGE STARTED
+[21:26:33] ══════════════════════════════════════════════════
+[21:26:33] 
+── S1: Windows System Temp
+[21:26:34]   ⚠ T1 failed, trying T2 (takeown)...
+[21:26:34]   ⚠ T2 failed, scheduling on reboot (T3)...
+[21:26:34]   🔁 T3 — scheduled for reboot: C:\Windows\Temp
+[21:26:34] 
+── U1: User Temp Folder (%TEMP%)
+[21:26:35]   ⚠ T1 failed, trying T2 (takeown)...
+[21:26:35]   ⚠ T2 failed, scheduling on reboot (T3)...
+[21:26:37]   ⏹ Cancel requested — stopping after current task...
+[21:26:37]   🔁 T3 — scheduled for reboot: C:\Users\Yash\AppData\Local\Temp
+[21:26:37]   ⏹ Purge cancelled by user.
+[21:26:37] 
+── Disk Cleanup: C:\
+[21:26:40]   ✅ Disk Cleanup done: C:\
+[21:26:40] 
+[21:26:40] ══════════════════════════════════════════════════
+[21:26:40]   PURGE COMPLETE ✅

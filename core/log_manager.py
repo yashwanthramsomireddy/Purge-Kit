@@ -1,5 +1,5 @@
 """
-PurgeKit v3.7 — Log Manager
+PurgeKit v3.8.1 — Log Manager
 MIT License — TeamExyKings
 Saves logs to: Downloads/PurgeKit/Logs/PurgeKit_YYYYMMDD_HHMMSS.txt
 """
@@ -12,12 +12,8 @@ GITHUB_URL   = "https://github.com/yashwanthramsomireddy/PurgeKit"
 AUTHOR_NAME  = "Yashwanth Ram Somireddy"
 AUTHOR_LOC   = "Chennai, India"
 AUTHOR_BRAND = "TeamExyKings"
-# Import version dynamically from main app config
-try:
-    from core.config import get_app_version
-    APP_VERSION = get_app_version()
-except Exception:
-    APP_VERSION = "3.7"
+# Fallback only: the app passes its own APP_VERSION into write_log(version=...)
+APP_VERSION  = "3.8.1"
 
 def get_log_dir():
     log_dir = os.path.join(os.path.expanduser("~"), "Downloads", "PurgeKit", "Logs")
@@ -28,12 +24,19 @@ def get_log_path():
     dt = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     return os.path.join(get_log_dir(), f"PurgeKit_{dt}.txt")
 
-def write_log(log_lines: list, extra_summary: str = ""):
-    path = get_log_path()
+def write_log(log_lines: list, extra_summary: str = "", version: str = None,
+              path: str = None):
+    """
+    Write the log. Pass `path` to rewrite the SAME file repeatedly (used for the
+    live log of a silent run). Written atomically (temp file + replace) so a
+    reader such as Notepad never sees a half-written file.
+    """
+    path = path or get_log_path()
+    tmp  = path + ".tmp"
     try:
-        with open(path, "w", encoding="utf-8") as f:
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write("=" * 60 + "\n")
-            f.write(f"  PurgeKit v{version or APP_VERSION}  |  MIT License  |  {AUTHOR_BRAND}\n")
+            f.write(f"  PurgeKit v{version if version else APP_VERSION}  |  MIT License  |  {AUTHOR_BRAND}\n")
             f.write(f"  Built with love by {AUTHOR_NAME}, {AUTHOR_LOC}\n")
             f.write(f"  GitHub  : {GITHUB_URL}\n")
             f.write(f"  Saved   : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -46,6 +49,11 @@ def write_log(log_lines: list, extra_summary: str = ""):
                 f.write("-" * 60 + "\n\n")
             for line in log_lines:
                 f.write(line + "\n")
+        os.replace(tmp, path)
         return path
-    except Exception as e:
+    except Exception:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
         return None

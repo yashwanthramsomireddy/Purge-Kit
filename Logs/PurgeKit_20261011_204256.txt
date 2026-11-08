@@ -1,0 +1,36 @@
+============================================================
+  PurgeKit v3.8.1  |  MIT License  |  TeamExyKings
+  Built with love by Yashwanth Ram Somireddy, Chennai, India
+  GitHub  : https://github.com/yashwanthramsomireddy/PurgeKit
+  Saved   : 2026-10-11 20:42:56
+  User    : Yash
+  PC      : Yashwanth
+  OS      : Windows-11-10.0.26300-SP0
+============================================================
+
+============================================================
+  Space Freed: 0 B
+  Time Taken:  0:00:00
+============================================================
+
+------------------------------------------------------------
+
+[20:42:47] PurgeKit v3.8.1 ready.
+[20:42:47] Select tasks and press START PURGE.
+[20:42:56] 
+[20:42:56] ══════════════════════════════════════════════════
+[20:42:56]   PURGE STARTED
+[20:42:56] ══════════════════════════════════════════════════
+[20:42:56] 
+── S1: Windows System Temp   ▶ started 20:42:56
+[20:42:56]   ⚠ T1 failed, trying T2 (takeown)...
+[20:42:56]   ⚠ T2 failed, scheduling on reboot (T3)...
+[20:42:56]   🔁 T3 — scheduled for reboot: C:\Windows\Temp
+[20:42:56]   ⏱ S1 finished 20:42:56 — took 0.2s — freed 0 B
+[20:42:56] 
+[20:42:56] ══════════════════════════════════════════════════
+[20:42:56]   PURGE COMPLETE ✅
+[20:42:56]   Space Freed: 0 B
+[20:42:56]   Time Taken: 0:00:00
+[20:42:56]   ⚠ REBOOT REQUIRED
+[20:42:56] ══════════════════════════════════════════════════
